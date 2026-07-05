@@ -26,6 +26,11 @@ class TeamBloc extends Bloc<TeamEvent, TeamState> {
     on<DeleteTeamEvent>(_deleteTeam);
   }
 
+  // Informa quantas partidas estão vinculadas a uma seleção.
+  Future<int> countRelatedMatches(int teamId) {
+    return database.countMatchesByTeamId(teamId);
+  }
+
   // Inicia a inscrição que acompanha as seleções armazenadas no banco.
   Future<void> _startTeamsObservation(
     StartTeamsObservationEvent event,
@@ -94,9 +99,13 @@ class TeamBloc extends Bloc<TeamEvent, TeamState> {
   // Remove uma seleção existente do banco de dados local.
   Future<void> _deleteTeam(
     DeleteTeamEvent event,
-    Emitter<TeamState> emit,
+    Emitter<TeamState> emit, 
   ) async {
     try {
+      final relatedMatchesCount = await database.countMatchesByTeamId(event.id);
+      if (relatedMatchesCount > 0) {
+        return;
+      }     
       await database.deleteTeam(event.id);
     } catch (_) {
       emit(const TeamErrorState('Não foi possível remover a seleção.'));

@@ -73,6 +73,50 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
 
   // Solicita confirmação antes de remover a seleção.
   Future<void> _confirmDeletion() async {
+    final teamBloc = context.read<TeamBloc>();
+
+    final relatedMatchesCount = await teamBloc.countRelatedMatches(
+      widget.team.id,
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    if (relatedMatchesCount > 0) {
+      final matchesText = relatedMatchesCount == 1
+          ? '1 partida cadastrada'
+          : '$relatedMatchesCount partidas cadastradas';
+
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Não é possível remover'),
+
+            content: Text(
+              'A seleção "${widget.team.name}" possui $matchesText. '
+              'Remova primeiro as partidas relacionadas antes de excluir a seleção.',
+              style: TextStyle(
+                color: Theme.of(dialogContext).colorScheme.onSurface,
+              ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(dialogContext);
+                },
+                child: const Text('ENTENDI'),
+              ),
+            ],
+          );
+        },
+      );
+
+      return;
+    }
+
     final confirm = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -117,7 +161,7 @@ class _EditTeamScreenState extends State<EditTeamScreen> {
       return;
     }
 
-    context.read<TeamBloc>().add(DeleteTeamEvent(widget.team.id));
+    teamBloc.add(DeleteTeamEvent(widget.team.id));
 
     Navigator.pop(context);
   }

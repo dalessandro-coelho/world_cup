@@ -68,6 +68,21 @@ class AppDatabase extends _$AppDatabase {
       teams,
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
+  
+  // Conta quantas partidas utilizam a seleção como mandante ou visitante.
+  Future<int> countMatchesByTeamId(int teamId) async {
+    final countExpression = matches.id.count();
+
+    final query = selectOnly(matches)
+      ..addColumns([countExpression])
+      ..where(
+        matches.homeTeamId.equals(teamId) | matches.awayTeamId.equals(teamId),
+      );
+
+    final result = await query.getSingle();
+
+    return result.read(countExpression) ?? 0;
+  }
 
   // Substitui os dados de uma seleção já cadastrada.
   Future<bool> updateTeam({
