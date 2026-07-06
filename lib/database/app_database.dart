@@ -31,6 +31,16 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 1;
 
+  // Ativa a validação de chaves estrangeiras no SQLite.
+  @override
+  MigrationStrategy get migration {
+    return MigrationStrategy(
+      beforeOpen: (details) async {
+        await customStatement('PRAGMA foreign_keys = ON');
+      },
+    );
+  }
+
   // Insere uma nova seleção no banco de dados local.
   Future<int> addTeam({
     required String name,
