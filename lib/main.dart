@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:provider/provider.dart';
 import 'package:world_cup/app/theme/app_theme.dart';
 import 'package:world_cup/app/theme/bloc/theme_bloc.dart';
 import 'package:world_cup/app/theme/bloc/theme_state.dart';
@@ -19,28 +19,36 @@ void main() {
   final database = AppDatabase();
 
   runApp(
-    MultiBlocProvider(
+    MultiProvider(
       providers: [
-        BlocProvider(create: (_) => ThemeBloc()),
-
-        BlocProvider(
-          create: (_) =>
-              TeamBloc(database)..add(const StartTeamsObservationEvent()),
-        ),
-
-        BlocProvider(
-          create: (_) =>
-              MatchBloc(database)..add(const StartMatchesObservationEvent()),
-        ),
-
-        BlocProvider(
-          create: (_) =>
-              StandingsBloc(database)
-                ..add(const StartStandingsObservationEvent()),
+        Provider<AppDatabase>(
+          create: (_) => AppDatabase(),
+          dispose: (_, database) {
+            database.close();
+          },
         ),
       ],
-
-      child: const WorldCupApp(),
+      child: MultiBlocProvider(
+        providers: [
+          BlocProvider(create: (_) => ThemeBloc()),
+          BlocProvider(
+            create: (context) =>
+                TeamBloc(context.read<AppDatabase>())
+                  ..add(const StartTeamsObservationEvent()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                MatchBloc(context.read<AppDatabase>())
+                  ..add(const StartMatchesObservationEvent()),
+          ),
+          BlocProvider(
+            create: (context) =>
+                StandingsBloc(context.read<AppDatabase>())
+                  ..add(const StartStandingsObservationEvent()),
+          ),
+        ],
+        child: const WorldCupApp(),
+      ),
     ),
   );
 }
